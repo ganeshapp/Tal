@@ -1,0 +1,104 @@
+[
+  {
+    "path": "assets/pieces/wK.svg",
+    "url": "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wK.svg",
+    "bytes": 642,
+    "sha256": "09837f1f99dae2d05c2a0bfb5ce0fb9f37a95b124de44f428a08ae18d7b7c557"
+  },
+  {
+    "path": "assets/pieces/wQ.svg",
+    "url": "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wQ.svg",
+    "bytes": 827,
+    "sha256": "9c0a960b360e08cea48eedab54e852107145de289b81a82fe27942045e2ab665"
+  },
+  {
+    "path": "assets/pieces/wR.svg",
+    "url": "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wR.svg",
+    "bytes": 531,
+    "sha256": "05746153e11de3ff4a43d6725f704e226e5d5b49c6ff170ed598d3e9883f2cd5"
+  },
+  {
+    "path": "assets/pieces/wB.svg",
+    "url": "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wB.svg",
+    "bytes": 755,
+    "sha256": "8bf4f38cc170686775f81158934301942b07e3f1162e76c6305e76d66aaa0910"
+  },
+  {
+    "path": "assets/pieces/wN.svg",
+    "url": "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wN.svg",
+    "bytes": 648,
+    "sha256": "43d8bed9cd40836335072a20f52d30237e6e2cbe304ffb13e258fa1d576c156a"
+  },
+  {
+    "path": "assets/pieces/wP.svg",
+    "url": "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wP.svg",
+    "bytes": 455,
+    "sha256": "a8bd79f344ea69a577cdd7b11cbab7bbebfc157cce01c6d29b8f2edf1c44068e"
+  },
+  {
+    "path": "assets/pieces/bK.svg",
+    "url": "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bK.svg",
+    "bytes": 815,
+    "sha256": "2dc3caba39a67a707ebc27f4e41b727dd5252f4f49da695fc15cc2589dd92a47"
+  },
+  {
+    "path": "assets/pieces/bQ.svg",
+    "url": "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bQ.svg",
+    "bytes": 965,
+    "sha256": "2d0162d1fe776ac5a4d307d4f6e5960804273edc0d3743f1c97a158f5a64c4b1"
+  },
+  {
+    "path": "assets/pieces/bR.svg",
+    "url": "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bR.svg",
+    "bytes": 612,
+    "sha256": "5928b86919ae815f5d35dea8a25f5a84c3f8839468a137e429d42f618185cbcd"
+  },
+  {
+    "path": "assets/pieces/bB.svg",
+    "url": "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bB.svg",
+    "bytes": 738,
+    "sha256": "48ff9dba84dae861b1a81ac58f4647e05cee8a827acad1618bf11beaedcce60d"
+  },
+  {
+    "path": "assets/pieces/bN.svg",
+    "url": "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bN.svg",
+    "bytes": 837,
+    "sha256": "72e1565fbc9024015dcb6ee28d918c876523119f6f552c0a40d3118c13a67e13"
+  },
+  {
+    "path": "assets/pieces/bP.svg",
+    "url": "https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bP.svg",
+    "bytes": 353,
+    "sha256": "93e11e46deceff0768211a28df3e39c6d3427aa172bdb5e3928b025bd2858587"
+  },
+  {
+    "path": "assets/fonts/Inter.ttf",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/inter/Inter%5Bopsz,wght%5D.ttf",
+    "bytes": 876576,
+    "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031"
+  },
+  {
+    "path": "assets/fonts/Lora.ttf",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/lora/Lora%5Bwght%5D.ttf",
+    "bytes": 212196,
+    "sha256": "822a6621ccbe8d97d20ac88c1c41f5615c9c2c202eaa75f272cd452aac6475a7"
+  },
+  {
+    "path": "assets/licenses/Inter-OFL.txt",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/inter/OFL.txt",
+    "bytes": 4377,
+    "sha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57"
+  },
+  {
+    "path": "assets/licenses/Lora-OFL.txt",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/lora/OFL.txt",
+    "bytes": 4423,
+    "sha256": "1d9a970809ac804b582a6ce7f0ebc4e7fefcbfd7ff6299cad35ee656a21be716"
+  },
+  {
+    "path": "assets/licenses/pieces.txt",
+    "url": "https://raw.githubusercontent.com/lichess-org/lila/master/COPYING.md",
+    "bytes": 11180,
+    "sha256": "ad0355db9ccd9ec049120945b356ff40c7c868d719a961732868bd5f5306cbba"
+  }
+]

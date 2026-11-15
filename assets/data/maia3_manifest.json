@@ -1,0 +1,13 @@
+{
+  "code_revision": "1e13597c42d4858b7cfd7cfdae01e297263364b2",
+  "model_revision": "51a0145a8178046f7de23119160b136672deeb2b",
+  "model_url": "https://huggingface.co/UofTCSSLab/Maia3-23M",
+  "bytes": 89969477,
+  "sha256": "5566ee27aa60c4030ec6810d1147638d3554fea2f62d3037658b071bf9104859",
+  "checkpoint_sha256": "bce6cd1af5f0399ac7eed33fabb7a6a2ef6193662c2740f262bf93af7bfb3569",
+  "parity_cases": 25,
+  "max_absolute_logit_error": 4.673004150390625e-05,
+  "inference_ms_mean": 18.046596680069342,
+  "precision": "float32",
+  "opset": 17
+}

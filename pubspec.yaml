@@ -1,0 +1,41 @@
+name: tal
+description: Offline chess training with Maia 3, growing toward creative attacking play inspired by Mikhail Tal.
+publish_to: none
+version: 0.3.0+3
+
+environment:
+  sdk: '>=3.7.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  bishop: 1.4.4
+  flutter_svg: ^2.0.17
+  shared_preferences: ^2.5.3
+  path_provider: ^2.1.5
+  stockfish:
+    path: third_party/stockfish
+  onnxruntime:
+    path: third_party/onnxruntime
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/pieces/
+    - assets/data/
+    - assets/weights/
+    - assets/licenses/
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
+    - family: Lora
+      fonts:
+        - asset: assets/fonts/Lora.ttf

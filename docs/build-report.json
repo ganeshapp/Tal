@@ -1,0 +1,170 @@
+{
+  "app": "Tal",
+  "version": "0.3.0+3",
+  "verified_at": "2026-11-15T16:35:05.808165+09:00",
+  "artifacts": {
+    "macos": {
+      "platform": "Apple Silicon (ARM64), macOS 12+",
+      "dmg": {
+        "path": "build/release/Tal-0.3.0-arm64.dmg",
+        "bytes": 182827579,
+        "sha256": "bdd7d2dd43b8b3404429abeb3644cc9459c931f61c588ceb97cd29d3f7862903"
+      },
+      "app_path": "build/distribution/Tal.app",
+      "app_bytes": 256856191,
+      "signing": "Ad-hoc signed; not notarized",
+      "dmg_integrity": "hdiutil verify passed",
+      "signature": "codesign --verify --deep --strict passed, including mounted installer application",
+      "installation_contents": [
+        "Tal.app",
+        "Applications symlink",
+        "Install.txt"
+      ],
+      "application_id": "io.github.ganeshapp.tal"
+    },
+    "android": {
+      "platform": "ARM64, Android API 24+",
+      "apk": {
+        "path": "build/release/Tal-0.3.0-android-arm64.apk",
+        "bytes": 231683836,
+        "sha256": "346a860f9897bb7824786ed5616e8594b20fdf533841bb88cd3329599058313f",
+        "expanded_bytes": 244572472,
+        "native_libraries": [
+          {
+            "path": "lib/arm64-v8a/libapp.so",
+            "bytes": 6226848
+          },
+          {
+            "path": "lib/arm64-v8a/libdatastore_shared_counter.so",
+            "bytes": 7112
+          },
+          {
+            "path": "lib/arm64-v8a/libflutter.so",
+            "bytes": 11057968
+          },
+          {
+            "path": "lib/arm64-v8a/libonnxruntime.so",
+            "bytes": 14203216
+          },
+          {
+            "path": "lib/arm64-v8a/libstockfish.so",
+            "bytes": 114025392
+          }
+        ]
+      },
+      "signing": "Development signing key for personal testing",
+      "internet_permission": false,
+      "release_smoke_test": "Installed and cold-launched on Android API 36 ARM64 emulator",
+      "application_id": "io.github.ganeshapp.tal"
+    },
+    "build_assets": {
+      "path": "build/release/Tal-0.3.0-build-assets.tar.gz",
+      "bytes": 190938080,
+      "sha256": "a43f027488fb6bd82a4c87f3bfcf2cc2a2cdab4019681387baa9878cc96719ea"
+    }
+  },
+  "verification": {
+    "automated_tests_passed": 49,
+    "static_analysis": "No issues found",
+    "bundled_puzzle_solutions_validated": 19050,
+    "bundled_opening_lines_validated": 3865,
+    "model_parity": {
+      "cases": 25,
+      "max_absolute_logit_error": 4.673004150390625e-05,
+      "top_move_matches": 25,
+      "dart_encoding_and_native_runtime": "Passed"
+    },
+    "android_native_integration": {
+      "passed": true,
+      "maia_rating_inputs": [
+        600,
+        1500,
+        1600,
+        1700,
+        1800,
+        1900,
+        2000,
+        2600
+      ],
+      "post_initialization_inference_ms_range": [
+        54,
+        86
+      ],
+      "stockfish_depth": 16,
+      "multipv": 3,
+      "mate_and_concurrent_requests": "Passed",
+      "note": "Engine integration verified before rebrand; the model and native engine sources are unchanged. Tal 0.3.0 APK independently installed and launched successfully."
+    },
+    "macos_packaged_engines": "Maia inference, Stockfish MultiPV, mate results passed using libraries and engine inside final app bundle",
+    "packaged_assets": "Mac and Android model, puzzle and opening assets are byte-identical to validated sources",
+    "responsive_widget_checks": "390/1280 screenshots; 360/390/1280 interaction/layout tests",
+    "regressions": [
+      "Qxb7# is Best with exact White 100%",
+      "Black mate and draws",
+      "Legal premoves and takeback cancellation",
+      "Graph scrubbing, autoplay and analysis branches",
+      "Glickman rating example",
+      "Rating offsets, theme selection, first-attempt-only scoring",
+      "3/5-minute Storm expiry and cancellation",
+      "Opening transpositions and combined history filters"
+    ],
+    "previous_native_ui_checks": [
+      "Puzzle tap and drag through complete solution",
+      "One provisional rating update and dashboard persistence",
+      "Maia 2000 game and capture response",
+      "Immediate review and selectable key move",
+      "Suggested move branch",
+      "Clickable computer variation",
+      "Return to main game",
+      "Both players move-category summary"
+    ],
+    "previous_native_ui_checks_note": "Performed on 0.2.0 before this branding-only app change; 0.3.0 reruns all 49 automated tests and packaged Mac engine checks.",
+    "rebrand_checks": [
+      "Tal names and 0.3.0 metadata in Mac bundle and Android APK",
+      "New io.github.ganeshapp.tal identifiers",
+      "Updated icons and responsive previews",
+      "No previous brand in first-party UI or package metadata"
+    ],
+    "build_assets_restore": "8 files restored into an empty directory, with archive and per-file SHA-256 verified"
+  },
+  "assets": {
+    "maia3": {
+      "code_revision": "1e13597c42d4858b7cfd7cfdae01e297263364b2",
+      "model_revision": "51a0145a8178046f7de23119160b136672deeb2b",
+      "model_url": "https://huggingface.co/UofTCSSLab/Maia3-23M",
+      "bytes": 89969477,
+      "sha256": "5566ee27aa60c4030ec6810d1147638d3554fea2f62d3037658b071bf9104859",
+      "checkpoint_sha256": "bce6cd1af5f0399ac7eed33fabb7a6a2ef6193662c2740f262bf93af7bfb3569",
+      "parity_cases": 25,
+      "max_absolute_logit_error": 4.673004150390625e-05,
+      "inference_ms_mean": 18.046596680069342,
+      "precision": "float32",
+      "opset": 17
+    },
+    "puzzles": {
+      "records": 19050,
+      "bytes": 5507846,
+      "sha256": "bb03f7d0400811fc20ed045106538d105958bec15faa6393179482b73dd027ba",
+      "rating_min": 400,
+      "rating_max": 3199
+    },
+    "openings": {
+      "source": "https://github.com/lichess-org/chess-openings",
+      "revision": "3ba6b20d31b2e6125cb0e6a2e792f400717d9d39",
+      "license": "CC0-1.0",
+      "records": 3865,
+      "bytes": 833593,
+      "sha256": "8921df3b274b7247882a6e476c4a023ac0672d9f57e309ebd0d435566767be5c"
+    }
+  },
+  "limits": [
+    "Maia Elo settings are model inputs, not independently calibrated playing ratings",
+    "Puzzle ratings are local; not synchronized with Lichess",
+    "Analysis targets depth 16 with a per-position time budget; actual depth is shown",
+    "Great and brilliant categories are conservative heuristics",
+    "Analysis branches are session-local",
+    "Browser native engines unavailable; iOS unvalidated"
+  ],
+  "repository": "https://github.com/ganeshapp/Tal",
+  "release": "https://github.com/ganeshapp/Tal/releases/tag/v0.3.0"
+}

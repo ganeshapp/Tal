@@ -1,0 +1,79 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+**/.cxx/
+**/.gradle/
+**/build/
+*.apk
+*.aab
+third_party/stockfish/networks/
+
+.venv-maia/
+*.dmg
+
+# Release build assets are fetched with tool/fetch_build_assets.py.
+assets/weights/*.onnx
+third_party/onnxruntime/**/*.so*
+third_party/onnxruntime/**/*.dylib
+third_party/onnxruntime/**/*.dll
+third_party/leela_chess_zero/
+
+# Local environments, generated platform files and credentials.
+.venv*/
+**/ephemeral/
+**/.symlinks/
+**/Pods/
+**/flutter_export_environment.sh
+**/Generated.xcconfig
+**/local.properties
+**/key.properties
+**/*.keystore
+**/*.jks
+.env
+.env.*
+!.env.example
+*.pem
+*.key

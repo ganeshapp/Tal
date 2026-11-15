@@ -1,0 +1,43 @@
+{
+  "version": "0.3.0",
+  "archive": {
+    "name": "Tal-0.3.0-build-assets.tar.gz",
+    "url": "https://github.com/ganeshapp/Tal/releases/download/v0.3.0/Tal-0.3.0-build-assets.tar.gz",
+    "bytes": 190938080,
+    "sha256": "a43f027488fb6bd82a4c87f3bfcf2cc2a2cdab4019681387baa9878cc96719ea"
+  },
+  "files": {
+    "assets/weights/maia3-23m.onnx": {
+      "bytes": 89969477,
+      "sha256": "5566ee27aa60c4030ec6810d1147638d3554fea2f62d3037658b071bf9104859"
+    },
+    "third_party/onnxruntime/android/src/main/jniLibs/arm64-v8a/libonnxruntime.so": {
+      "bytes": 14203224,
+      "sha256": "6c11aea56f6467c0474aed1d460484aa110dc4a4e25074ebc02c99792dd44be0"
+    },
+    "third_party/onnxruntime/android/src/main/jniLibs/armeabi-v7a/libonnxruntime.so": {
+      "bytes": 9822672,
+      "sha256": "2dd1b0f62c60748f4d9f2d09f11598c591e11eb3bd788efb1017d3fd194e3d02"
+    },
+    "third_party/onnxruntime/linux/libonnxruntime.so.1.15.1": {
+      "bytes": 16713232,
+      "sha256": "6ce2845caacb638ed78bb23bbadbb4748f962c409a6748b402dc1223ba307b28"
+    },
+    "third_party/onnxruntime/macos/libonnxruntime.1.15.1.dylib": {
+      "bytes": 46158816,
+      "sha256": "c0a7154f9b9df90ad8a9b4a63f45fc7ad26cbc9238241c9faaa53a32092d8264"
+    },
+    "third_party/onnxruntime/windows/onnxruntime.dll": {
+      "bytes": 9630648,
+      "sha256": "bb090dd258282c1d7f7a41a83492ba07bc4fe65d75259435587350e1fa66f1bc"
+    },
+    "third_party/stockfish/networks/nn-37f18f62d772.nnue": {
+      "bytes": 3519630,
+      "sha256": "37f18f62d772f3107e1d6aaca3898c130c3c86f2ab63e6555fbbca20635a899d"
+    },
+    "third_party/stockfish/networks/nn-c288c895ea92.nnue": {
+      "bytes": 108919594,
+      "sha256": "c288c895ea924429ea9092e3f36b2b3c1f00f2a3a4c759ff7e57e79e3b43e4a7"
+    }
+  }
+}
