@@ -130,7 +130,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             const Text(
-              'Tal 0.3.0',
+              'Tal 0.3.1',
               style: TextStyle(color: muted, fontSize: 11),
             ),
           ],

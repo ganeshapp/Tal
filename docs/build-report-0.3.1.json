@@ -1,0 +1,161 @@
+{
+  "app": "Tal",
+  "version": "0.3.1+4",
+  "verified_at": "2026-11-17T22:37:53.559647+09:00",
+  "repository": "https://github.com/ganeshapp/Tal",
+  "release": "https://github.com/ganeshapp/Tal/releases/tag/v0.3.1",
+  "artifacts": {
+    "android": {
+      "platform": "ARM64, Android API 24+",
+      "apk": {
+        "path": "build/release/Tal-0.3.1-android-arm64.apk",
+        "bytes": 231740385,
+        "sha256": "6bee104adc2203cd749381e29cfce41de85aca49a5a503b5a23305ec658ecc8b"
+      },
+      "application_id": "io.github.ganeshapp.tal",
+      "version_name": "0.3.1",
+      "version_code": 2004,
+      "signing": "Development signing key for personal testing; apksigner verify passed",
+      "internet_permission": false,
+      "release_smoke_test": "Installed and cold-launched successfully on Android API 36 ARM64 emulator"
+    },
+    "macos": {
+      "platform": "Apple Silicon (ARM64), macOS 12+",
+      "dmg": {
+        "path": "build/release/Tal-0.3.1-arm64.dmg",
+        "bytes": 182924206,
+        "sha256": "a40bae0e6265d75731691a73f4d21c6b9985d0a5ec75aada00b0b2f0ce128e4b"
+      },
+      "application_id": "io.github.ganeshapp.tal",
+      "bundle_version": "0.3.1 (4)",
+      "signing": "Ad-hoc signed; not notarized; codesign --verify --deep --strict passed",
+      "dmg_integrity": "hdiutil verify passed"
+    },
+    "build_assets": {
+      "unchanged_from": "0.3.0",
+      "manifest": "tool/build_assets_manifest.json",
+      "archive": "https://github.com/ganeshapp/Tal/releases/download/v0.3.0/Tal-0.3.0-build-assets.tar.gz",
+      "sha256": "a43f027488fb6bd82a4c87f3bfcf2cc2a2cdab4019681387baa9878cc96719ea"
+    }
+  },
+  "verification": {
+    "automated_tests_passed": 64,
+    "automated_tests_skipped": 0,
+    "static_analysis": "No issues found",
+    "bundled_puzzle_solutions_validated": 19050,
+    "bundled_opening_lines_validated": 3865,
+    "book_positions": 5579,
+    "book_moves": 8192,
+    "packaged_assets": "Mac and Android model, puzzles, opening catalogue and new book index match their validated source files byte for byte",
+    "macos_packaged_engines": "Maia inference, Stockfish MultiPV and mate results passed using binaries inside the final app bundle",
+    "android_native_integration": {
+      "passed": true,
+      "maia_rating_inputs": [
+        600,
+        1500,
+        1600,
+        1700,
+        1800,
+        1900,
+        2000,
+        2600
+      ],
+      "stockfish_depth": 16,
+      "multipv": 3,
+      "mate_and_concurrent_requests": "Passed"
+    },
+    "android_board_integration": {
+      "passed": true,
+      "selection_across_native_maia_reply": "Passed",
+      "drag_landing": "Passed",
+      "frames": 121,
+      "build_p95_ms": 2.133,
+      "raster_p95_ms": 3.91,
+      "environment": "Flutter debug build; Android API 36 ARM64 emulator; Apple M2 host GPU via Metal; setup frames excluded",
+      "limits": "Emulator regression check, not physical-device performance certification"
+    },
+    "grading_examples_from_native_stockfish": [
+      {
+        "case": "reported-h3",
+        "ply": 0,
+        "played": "h2h3",
+        "best": "h2h3",
+        "label": "Best",
+        "loss": 0.0,
+        "beforeCp": 127,
+        "afterCp": 121,
+        "depth": 16,
+        "beforeMate": null,
+        "afterMate": null,
+        "opening": null
+      },
+      {
+        "case": "reported-castling",
+        "ply": 0,
+        "played": "e1g1",
+        "best": "b1d2",
+        "label": "Good",
+        "loss": 0.2646397541631913,
+        "beforeCp": 114,
+        "afterCp": 111,
+        "depth": 16,
+        "beforeMate": null,
+        "afterMate": null,
+        "opening": null
+      },
+      {
+        "case": "ponziani",
+        "ply": 4,
+        "played": "c2c3",
+        "best": "f1b5",
+        "label": "Book",
+        "loss": 5.33387669642061,
+        "beforeCp": 31,
+        "afterCp": -27,
+        "depth": 16,
+        "beforeMate": null,
+        "afterMate": null,
+        "opening": "Ponziani Opening"
+      }
+    ],
+    "responsive_layouts": [
+      [
+        360,
+        640
+      ],
+      [
+        390,
+        844
+      ],
+      [
+        800,
+        390
+      ],
+      [
+        1280,
+        800
+      ]
+    ],
+    "regression_checks": [
+      "Selection and active drag survive a valid opponent reply",
+      "Captured selected piece clears safely",
+      "Stable pointer grab offset and piece size",
+      "Static board isolated from drag painting; direct landing without second animation",
+      "Premoves, promotion, takebacks and both orientations",
+      "Routine castling, h3 and equal exchanges are not Brilliant",
+      "Supported quiet sacrifice and Greek Gift acceptance; shallow or unsound offers rejected",
+      "Ponziani c3 is Book while retaining actual engine score",
+      "Every opening catalogue prefix indexed",
+      "Stale reviews and derived mistakes invalidated",
+      "Move-list scrolling, cursor navigation, category filtering and smaller-board control"
+    ],
+    "visual_inspection": "Phone and landscape review screenshots, Ponziani Book display, Summary and installed Android release home inspected"
+  },
+  "limits": [
+    "Brilliant is a conservative heuristic and deliberately misses some creative sacrifices",
+    "Analysis targets depth 16 with a per-position time budget; actual achieved depth is displayed",
+    "Native interaction was tested on an Android emulator; physical phone feel still needs user testing",
+    "Maia Elo settings are model inputs, not independently calibrated playing ratings",
+    "iOS and browser native engine support remain unvalidated"
+  ]
+}

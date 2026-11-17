@@ -7,7 +7,13 @@ import 'package:tal/core/openings.dart';
 void main() {
   final data =
       jsonDecode(File('assets/data/openings.json').readAsStringSync()) as List;
-  final library = OpeningLibrary()..load(data);
+  final library =
+      OpeningLibrary()..load(
+        data,
+        book: jsonDecode(
+          File('assets/data/opening_book.json').readAsStringSync(),
+        ),
+      );
   GameRecord game(List<String> moves) => GameRecord(
     id: 'opening',
     startFen: initialFen,
@@ -22,6 +28,11 @@ void main() {
       for (final row in data) {
         final pos = ChessPosition();
         for (final move in row['moves']) {
+          expect(
+            library.containsMove(pos.fen, move),
+            isTrue,
+            reason: 'Book prefix ${row['name']}: $move',
+          );
           expect(pos.play(move), isTrue, reason: '${row['name']}: $move');
         }
         expect(pos.fen.split(' ').take(3).join(' '), row['fen']);

@@ -67,11 +67,15 @@ double winningChances(int cp) =>
 
 final maiaRatings = List.generate(21, (i) => 600 + i * 100);
 
+// Cached analysis is derived data. Recompute it when the grading rules change.
+const reviewVersion = 2;
+
 class MoveReview {
   final int ply, beforeCp, afterCp, depth;
   final String played, best, label;
   final double loss;
   final int? beforeMate, afterMate;
+  final String? opening;
   const MoveReview({
     required this.ply,
     required this.played,
@@ -83,6 +87,7 @@ class MoveReview {
     required this.depth,
     this.beforeMate,
     this.afterMate,
+    this.opening,
   });
   Map<String, dynamic> toJson() => {
     'ply': ply,
@@ -95,6 +100,7 @@ class MoveReview {
     'depth': depth,
     'beforeMate': beforeMate,
     'afterMate': afterMate,
+    'opening': opening,
   };
   factory MoveReview.fromJson(Map<String, dynamic> j) => MoveReview(
     ply: j['ply'],
@@ -107,6 +113,7 @@ class MoveReview {
     depth: j['depth'],
     beforeMate: j['beforeMate'],
     afterMate: j['afterMate'],
+    opening: j['opening'],
   );
 }
 
@@ -246,6 +253,7 @@ class GameRecord {
     'moves': moves,
     'result': result,
     'reviews': reviews.map((r) => r.toJson()).toList(),
+    'reviewVersion': reviewVersion,
   };
   factory GameRecord.fromJson(Map<String, dynamic> j) => GameRecord(
     id: j['id'],
@@ -259,7 +267,7 @@ class GameRecord {
     moves: List<String>.from(j['moves']),
     result: j['result'],
     reviews:
-        (j['reviews'] as List? ?? [])
+        (j['reviewVersion'] == reviewVersion ? j['reviews'] as List? ?? [] : [])
             .map((r) => MoveReview.fromJson(Map<String, dynamic>.from(r)))
             .toList(),
   );

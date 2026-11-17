@@ -76,7 +76,7 @@ class AppStore extends ChangeNotifier {
                 .map((g) => GameRecord.fromJson(Map<String, dynamic>.from(g)))
                 .toList();
         store.mistakes =
-            (j['mistakes'] as List)
+            (j['reviewVersion'] == reviewVersion ? j['mistakes'] as List : [])
                 .map((g) => Mistake.fromJson(Map<String, dynamic>.from(g)))
                 .toList();
         store.solved = Set<String>.from(j['solved']);
@@ -108,6 +108,11 @@ class AppStore extends ChangeNotifier {
     openingLibrary.load(
       jsonDecode(await rootBundle.loadString('assets/data/openings.json'))
           as List,
+      book:
+          jsonDecode(
+                await rootBundle.loadString('assets/data/opening_book.json'),
+              )
+              as Map<String, dynamic>,
     );
     return store;
   }
@@ -118,6 +123,7 @@ class AppStore extends ChangeNotifier {
   Future<void> save() {
     final snapshot = jsonEncode({
       'version': 2,
+      'reviewVersion': reviewVersion,
       'puzzleProgress': puzzleProgress.toJson(),
       'games': games.map((g) => g.toJson()).toList(),
       'mistakes': mistakes.map((m) => m.toJson()).toList(),
@@ -159,6 +165,7 @@ class AppStore extends ChangeNotifier {
   void addMistake(GameRecord game, MoveReview review) {
     final pos = game.position(review.ply);
     if (pos.whiteTurn != game.humanWhite ||
+        review.label == 'Book' ||
         review.loss <= 20 ||
         review.best.isEmpty) {
       return;

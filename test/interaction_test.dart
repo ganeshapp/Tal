@@ -225,6 +225,8 @@ void main() {
       await t.pumpAndSettle();
       expect(t.takeException(), isNull);
       expect(find.byType(ChessBoard), findsOneWidget);
+      await t.tap(find.text('Summary').first);
+      await t.pumpAndSettle();
       final graph = t.getRect(find.byType(EvaluationGraph));
       await t.tapAt(Offset(graph.right - 1, graph.center.dy));
       await t.pumpAndSettle();

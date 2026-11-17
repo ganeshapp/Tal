@@ -283,7 +283,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       alternatives = false,
       threats = false,
       liveBusy = false;
-  bool autoplay = false;
+  bool autoplay = false, smallBoard = false;
   int tab = 0, liveVersion = 0, analysisVersion = 0;
   String? error, filter;
   bool? filterWhite;
@@ -469,7 +469,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
   void _jumpIssue(int direction) {
     final issues =
-        record.reviews.where((r) => r.loss >= 5).map((r) => r.ply + 1).toList();
+        record.reviews
+            .where((r) => r.label != 'Book' && r.loss >= 5)
+            .map((r) => r.ply + 1)
+            .toList();
     if (issues.isEmpty) return;
     final next =
         direction > 0
@@ -546,10 +549,18 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       appBar: AppBar(
         toolbarHeight: 48,
         title: Text(
-          'Review · ${record.result}',
+          record.result == '*' ? 'Review' : 'Review · ${record.result}',
           style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
         ),
         actions: [
+          IconButton(
+            tooltip: smallBoard ? 'Enlarge board' : 'More room for moves',
+            onPressed: () => setState(() => smallBoard = !smallBoard),
+            icon: Icon(
+              smallBoard ? Icons.open_in_full : Icons.close_fullscreen,
+              size: 19,
+            ),
+          ),
           IconButton(
             tooltip: 'Copy PGN',
             onPressed: () {
@@ -582,83 +593,129 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         autofocus: true,
         onKeyEvent: _key,
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: LayoutBuilder(
-              builder: (context, c) {
-                final wide = c.maxWidth >= 850;
-                final side = max(
-                  100.0,
-                  min(
-                    wide ? c.maxWidth * .60 - 34 : c.maxWidth - 34,
-                    c.maxHeight - (wide ? 180 : 310),
-                  ),
-                );
-                final board = SizedBox(
-                  width: side + 34,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      PlayerStrip(
-                        name: flipped ? record.whiteName : record.blackName,
-                        white: flipped,
-                      ),
-                      Listener(
-                        onPointerSignal: (event) {
-                          if (event is PointerScrollEvent) {
-                            _step(event.scrollDelta.dy > 0 ? 1 : -1);
-                          }
-                        },
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: side,
-                              height: side,
-                              child: ChessBoard(
-                                position: pos,
-                                onMove: _move,
-                                flipped: flipped,
-                                coordinates: widget.store.coordinates,
-                                lastMove: node.move,
-                                arrows: boardArrows,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 26,
-                              height: side,
-                              child: EvaluationBar(
-                                cp: computer ? cp : null,
-                                mate: mate,
-                                flipped: flipped,
-                                loading: liveBusy,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      PlayerStrip(
-                        name: flipped ? record.blackName : record.whiteName,
-                        white: !flipped,
-                      ),
-                      _navigation(),
-                      _feedback(),
-                    ],
-                  ),
-                );
-                final panel = Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: LayoutBuilder(
+            builder: (context, c) {
+              final wide = c.maxWidth >= 700 && c.maxWidth > c.maxHeight;
+              final detailedPanel = wide && c.maxHeight >= 540;
+              final textScale = MediaQuery.textScalerOf(context).scale(1);
+              final feedbackHeight = textScale > 1.2 ? 60.0 : 48.0;
+              final playerHeight = textScale > 1.2 ? 36.0 : 28.0;
+              // Reserve a useful move viewport first, then fit the board. On
+              // phones the graph belongs in Summary, not above every move list.
+              final reservedMoves = min(240.0, max(176.0, c.maxHeight * .30));
+              final side =
+                  max(
+                    100.0,
+                    min(
+                      wide
+                          ? min(
+                            c.maxWidth * .57 - 30,
+                            c.maxHeight - playerHeight - feedbackHeight - 8,
+                          )
+                          : c.maxWidth - 38,
+                      wide
+                          ? c.maxHeight
+                          : c.maxHeight -
+                              playerHeight -
+                              feedbackHeight -
+                              40 -
+                              48 -
+                              reservedMoves,
+                    ),
+                  ) *
+                  (smallBoard ? .76 : 1);
+              final board = SizedBox(
+                width: side + 22,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (wide)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Text(
-                          openingName(record),
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ),
                     SizedBox(
-                      height: wide ? 96 : 58,
+                      height: playerHeight,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '○  ${record.whiteName}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              '●  ${record.blackName}',
+                              maxLines: 1,
+                              textAlign: TextAlign.end,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Listener(
+                      onPointerSignal: (event) {
+                        if (event is PointerScrollEvent) {
+                          GestureBinding.instance.pointerSignalResolver
+                              .register(
+                                event,
+                                (_) => _step(event.scrollDelta.dy > 0 ? 1 : -1),
+                              );
+                        }
+                      },
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: side,
+                            height: side,
+                            child: ChessBoard(
+                              position: pos,
+                              onMove: _move,
+                              flipped: flipped,
+                              coordinates: widget.store.coordinates,
+                              lastMove: node.move,
+                              arrows: boardArrows,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          SizedBox(
+                            width: 18,
+                            height: side,
+                            child: EvaluationBar(
+                              cp: computer ? cp : null,
+                              mate: mate,
+                              flipped: flipped,
+                              loading: liveBusy,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (wide) _feedback(height: feedbackHeight),
+                  ],
+                ),
+              );
+              final panel = Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (detailedPanel) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Text(
+                        openingName(record),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 84,
                       child: EvaluationGraph(
                         points: _points(),
                         cursor: cursor,
@@ -666,52 +723,86 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                       ),
                     ),
                     _analysisStatus(),
-                    SizedBox(
-                      height: 38,
-                      child: Row(
-                        children: [
-                          for (var i = 0; i < 3; i++)
-                            Expanded(
-                              child: TextButton(
-                                onPressed: () => setState(() => tab = i),
-                                style: TextButton.styleFrom(
-                                  backgroundColor: tab == i ? sage : null,
-                                  padding: EdgeInsets.zero,
-                                ),
-                                child: Text(
-                                  ['Moves', 'Engine', 'Summary'][i],
-                                  style: const TextStyle(fontSize: 12),
+                  ],
+                  if (!wide) _feedback(height: feedbackHeight),
+                  SizedBox(
+                    height: 40,
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < 3; i++)
+                          Expanded(
+                            child: Semantics(
+                              selected: tab == i,
+                              child: InkWell(
+                                onTap: () => setState(() => tab = i),
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: tab == i ? forest : line,
+                                        width: tab == i ? 2 : 1,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    ['Moves', 'Engine', 'Summary'][i],
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight:
+                                          tab == i
+                                              ? FontWeight.w700
+                                              : FontWeight.w500,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                        ],
-                      ),
-                    ),
-                    if (node.gamePly == null) _variation(),
-                    Expanded(
-                      child:
-                          tab == 0
-                              ? _moves()
-                              : tab == 1
-                              ? _engine()
-                              : _summary(),
-                    ),
-                    if (wide && tab != 1)
-                      SizedBox(height: 164, child: _engine()),
-                  ],
-                );
-                return wide
-                    ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        board,
-                        const SizedBox(width: 20),
-                        Expanded(child: panel),
+                          ),
                       ],
-                    )
-                    : Column(children: [board, Expanded(child: panel)]);
-              },
-            ),
+                    ),
+                  ),
+                  if (running)
+                    LinearProgressIndicator(
+                      minHeight: 2,
+                      value:
+                          record.reviews.length / max(1, record.moves.length),
+                    ),
+                  if (node.gamePly == null) _variation(),
+                  Expanded(
+                    child:
+                        tab == 0
+                            ? _moves()
+                            : tab == 1
+                            ? _engine()
+                            : _summary(showGraph: !detailedPanel),
+                  ),
+                  if (detailedPanel && tab != 1)
+                    SizedBox(height: 152, child: _engine()),
+                  if (wide) _navigation(),
+                ],
+              );
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child:
+                    wide
+                        ? Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            board,
+                            const SizedBox(width: 16),
+                            Expanded(child: panel),
+                          ],
+                        )
+                        : Column(
+                          children: [
+                            board,
+                            Expanded(child: panel),
+                            _navigation(),
+                          ],
+                        ),
+              );
+            },
           ),
         ),
       ),
@@ -737,9 +828,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   Widget _navigation() => SizedBox(
-    height: 36,
+    height: 48,
     child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         IconButton(
           tooltip: 'Start (Home)',
@@ -774,7 +865,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       ],
     ),
   );
-  Widget _feedback() {
+  Widget _feedback({double height = 48}) {
     final r = review;
     String text =
         node.parent == null
@@ -786,7 +877,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             : '${node.san}  ${reviewSymbols[r.label]}  ${r.label}';
     if (node.san.endsWith('#')) text = '${node.san} · Checkmate';
     return Container(
-      height: 62,
+      height: height,
       alignment: Alignment.centerLeft,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
@@ -810,7 +901,14 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (r != null && r.loss >= 1)
+                if (r?.label == 'Book')
+                  Text(
+                    r!.opening ?? 'Opening book',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11, color: muted),
+                  ),
+                if (r != null && r.label != 'Book' && r.loss >= 1)
                   Text(
                     '${r.loss.toStringAsFixed(1)}% winning chances lost',
                     style: const TextStyle(fontSize: 10, color: muted),
@@ -818,7 +916,11 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               ],
             ),
           ),
-          if (r != null && r.best.isNotEmpty && r.best != r.played)
+          if (r != null &&
+              r.label != 'Book' &&
+              r.label != 'Brilliant' &&
+              r.best.isNotEmpty &&
+              r.best != r.played)
             TextButton(
               onPressed: _better,
               child: Text(
@@ -837,7 +939,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   Widget _analysisStatus() {
-    final count = record.reviews.where((r) => r.loss >= 5).length;
+    final count =
+        record.reviews.where((r) => r.label != 'Book' && r.loss >= 5).length;
     return SizedBox(
       height: 34,
       child: Row(
@@ -941,6 +1044,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         ),
       Expanded(
         child: MoveTable(
+          showPlayers: false,
           record: record,
           cursor: node.gamePly ?? -1,
           onSelect: _gamePly,
@@ -950,8 +1054,26 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       ),
     ],
   );
-  Widget _summary() => ListView(
+  Widget _summary({bool showGraph = true}) => ListView(
     children: [
+      if (showGraph) ...[
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            openingName(record),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ),
+        SizedBox(
+          height: 100,
+          child: EvaluationGraph(
+            points: _points(),
+            cursor: cursor,
+            onSelect: _gamePly,
+          ),
+        ),
+        _analysisStatus(),
+      ],
       const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Row(
@@ -972,7 +1094,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           children: [
             Expanded(
               child: Text(
-                '${reviewSymbols[label]}  $label',
+                '${reviewSymbols[label]}  $label'.trim(),
                 style: TextStyle(fontSize: 12, color: reviewColor(label)),
               ),
             ),

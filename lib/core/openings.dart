@@ -5,10 +5,12 @@ import 'chess.dart';
 /// and en-passant flags, which do not change the opening's name.
 class OpeningLibrary {
   final Map<String, Opening> _positions = {};
+  Map<String, Set<String>> _book = {};
   final List<Opening> lines = [];
-  void load(List<dynamic> rows) {
+  void load(List<dynamic> rows, {Map<String, dynamic> book = const {}}) {
     _positions.clear();
     lines.clear();
+    _book = book.map((fen, moves) => MapEntry(fen, Set<String>.from(moves)));
     for (final row in rows) {
       final opening = Opening(
         row['name'],
@@ -23,6 +25,8 @@ class OpeningLibrary {
   }
 
   Opening? at(String fen) => _positions[fen.split(' ').take(3).join(' ')];
+  bool containsMove(String fen, String move) =>
+      _book[fen.split(' ').take(3).join(' ')]?.contains(move) ?? false;
   String identify(GameRecord game) {
     if (game.chess960) return 'Chess960';
     for (var ply = game.moves.length; ply >= 0; ply--) {

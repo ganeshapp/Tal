@@ -5,6 +5,7 @@ import '../core/chess.dart';
 import '../theme.dart';
 
 const reviewLabels = [
+  'Book',
   'Brilliant',
   'Great',
   'Best',
@@ -15,6 +16,7 @@ const reviewLabels = [
   'Miss',
 ];
 const reviewSymbols = {
+  'Book': '',
   'Brilliant': '!!',
   'Great': '!',
   'Best': '★',
@@ -25,6 +27,7 @@ const reviewSymbols = {
   'Miss': '×',
 };
 Color reviewColor(String label) => switch (label) {
+  'Book' => const Color(0xFF7A6550),
   'Brilliant' => const Color(0xFF078B91),
   'Great' => const Color(0xFF397EBA),
   'Inaccuracy' => const Color(0xFFB58A19),
@@ -177,6 +180,7 @@ class MoveTable extends StatefulWidget {
   final ValueChanged<int> onSelect;
   final String? filter;
   final bool? filterWhite;
+  final bool showPlayers;
   const MoveTable({
     super.key,
     required this.record,
@@ -184,6 +188,7 @@ class MoveTable extends StatefulWidget {
     required this.onSelect,
     this.filter,
     this.filterWhite,
+    this.showPlayers = true,
   });
   @override
   State<MoveTable> createState() => _MoveTableState();
@@ -191,6 +196,8 @@ class MoveTable extends StatefulWidget {
 
 class _MoveTableState extends State<MoveTable> {
   final controller = ScrollController();
+  List<int> _rows = [];
+  double _rowHeight = 44;
   @override
   void dispose() {
     controller.dispose();
@@ -201,7 +208,9 @@ class _MoveTableState extends State<MoveTable> {
   void didUpdateWidget(covariant MoveTable old) {
     super.didUpdateWidget(old);
     if (old.cursor != widget.cursor ||
-        old.record.moves.length != widget.record.moves.length) {
+        old.filter != widget.filter ||
+        old.filterWhite != widget.filterWhite ||
+        old.record.id != widget.record.id) {
       _scroll();
     }
   }
@@ -214,18 +223,25 @@ class _MoveTableState extends State<MoveTable> {
 
   void _scroll() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !controller.hasClients) return;
-      final offset =
+      if (!mounted || !controller.hasClients || _rows.isEmpty) return;
+      final row =
           (max(0, widget.cursor - 1) +
               (widget.record.startFen.split(' ')[1] == 'b' ? 1 : 0)) ~/
-          2 *
-          36.0;
+          2;
+      final index = _rows.indexOf(row);
+      if (index < 0) return;
+      final offset = index * _rowHeight;
       final view = controller.position.viewportDimension;
+      // Engine updates never pull a manually scrolled list back to the cursor.
+      // Navigation scrolls only when the newly selected row is off screen.
       if (offset < controller.offset ||
-          offset + 36 > controller.offset + view) {
+          offset + _rowHeight > controller.offset + view) {
         controller.animateTo(
-          (offset - view * .45).clamp(0, controller.position.maxScrollExtent),
-          duration: const Duration(milliseconds: 120),
+          (offset - (view - _rowHeight) / 2).clamp(
+            0,
+            controller.position.maxScrollExtent,
+          ),
+          duration: const Duration(milliseconds: 150),
           curve: Curves.easeOut,
         );
       }
@@ -237,48 +253,79 @@ class _MoveTableState extends State<MoveTable> {
     final record = widget.record, sans = record.sans;
     final offset = record.startFen.split(' ')[1] == 'b' ? 1 : 0,
         firstNumber = int.parse(record.startFen.split(' ')[5]);
+    final reviews = {for (final r in record.reviews) r.ply: r};
+    _rowHeight = 44 * max(1.0, MediaQuery.textScalerOf(context).scale(1));
+    bool matches(int i) =>
+        i >= 0 &&
+        i < sans.length &&
+        (widget.filter == null || reviews[i]?.label == widget.filter) &&
+        (widget.filterWhite == null ||
+            widget.filterWhite == ((i + offset) % 2 == 0));
+    _rows = [
+      for (var row = 0; row < (sans.length + offset + 1) ~/ 2; row++)
+        if (matches(row * 2 - offset) || matches(row * 2 + 1 - offset)) row,
+    ];
     Widget cell(int i) {
       if (i < 0 || i >= sans.length) return const Expanded(child: SizedBox());
-      final review = record.reviews.where((r) => r.ply == i).firstOrNull;
-      final white = (i + offset) % 2 == 0;
-      final matches =
-          (widget.filter == null || review?.label == widget.filter) &&
-          (widget.filterWhite == null || widget.filterWhite == white);
+      final review = reviews[i], selected = widget.cursor == i + 1;
       return Expanded(
-        child: Material(
-          color: widget.cursor == i + 1 ? sage : Colors.transparent,
-          child: InkWell(
-            onTap: () => widget.onSelect(i + 1),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              child: Opacity(
-                opacity: matches ? 1 : .3,
-                child: Row(
-                  children: [
-                    Text(
-                      sans[i],
-                      style: TextStyle(
-                        fontWeight:
-                            widget.cursor == i + 1
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                        fontSize: 13,
-                      ),
+        child: Semantics(
+          selected: selected,
+          label:
+              '${(i + offset) % 2 == 0 ? 'White' : 'Black'} ${firstNumber + (i + offset) ~/ 2}. ${sans[i]}${review == null ? '' : ', ${review.label}'}',
+          child: Material(
+            color: selected ? sage : Colors.transparent,
+            child: InkWell(
+              key: ValueKey('move-ply-${i + 1}'),
+              onTap: () => widget.onSelect(i + 1),
+              child: Container(
+                height: _rowHeight,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  border: Border(
+                    left: BorderSide(
+                      color: selected ? forest : Colors.transparent,
+                      width: 3,
                     ),
-                    const Spacer(),
-                    if (review != null)
-                      Tooltip(
-                        message: review.label,
+                  ),
+                ),
+                child: Opacity(
+                  opacity: matches(i) ? 1 : .38,
+                  child: Row(
+                    children: [
+                      Expanded(
                         child: Text(
-                          reviewSymbols[review.label] ?? '',
+                          sans[i],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: reviewColor(review.label),
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
+                            fontWeight:
+                                selected ? FontWeight.w700 : FontWeight.w500,
+                            fontSize: 14,
                           ),
                         ),
                       ),
-                  ],
+                      if (review != null)
+                        Tooltip(
+                          message: review.label,
+                          child:
+                              review.label == 'Book'
+                                  ? Icon(
+                                    Icons.menu_book_outlined,
+                                    size: 15,
+                                    color: reviewColor('Book'),
+                                  )
+                                  : Text(
+                                    reviewSymbols[review.label] ?? '',
+                                    style: TextStyle(
+                                      color: reviewColor(review.label),
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -289,59 +336,80 @@ class _MoveTableState extends State<MoveTable> {
 
     return Column(
       children: [
-        Container(
-          height: 30,
-          color: sage.withValues(alpha: .45),
-          padding: const EdgeInsets.only(left: 38),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'White · ${record.whiteName}',
-                  style: const TextStyle(fontSize: 11),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+        if (widget.showPlayers)
+          Container(
+            height: 30,
+            color: sage.withValues(alpha: .45),
+            padding: const EdgeInsets.only(left: 34),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'White · ${record.whiteName}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: Text(
-                  'Black · ${record.blackName}',
-                  style: const TextStyle(fontSize: 11),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Expanded(
+                  child: Text(
+                    'Black · ${record.blackName}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
         Expanded(
           child:
-              sans.isEmpty
-                  ? const Center(
-                    child: Text('No moves yet', style: TextStyle(color: muted)),
+              _rows.isEmpty
+                  ? Center(
+                    child: Text(
+                      sans.isEmpty ? 'No moves yet' : 'No matching moves',
+                      style: const TextStyle(color: muted),
+                    ),
                   )
-                  : ListView.builder(
+                  : Scrollbar(
                     controller: controller,
-                    itemExtent: 36,
-                    itemCount: (sans.length + offset + 1) ~/ 2,
-                    itemBuilder:
-                        (_, row) => Row(
-                          children: [
-                            SizedBox(
-                              width: 38,
-                              child: Text(
-                                '${firstNumber + row}.',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: muted,
-                                  fontSize: 11,
+                    thumbVisibility: true,
+                    interactive: true,
+                    thickness: 3,
+                    radius: const Radius.circular(2),
+                    child: ListView.builder(
+                      key: const ValueKey('move-list'),
+                      controller: controller,
+                      padding: EdgeInsets.zero,
+                      itemExtent: _rowHeight,
+                      itemCount: _rows.length,
+                      itemBuilder: (_, index) {
+                        final row = _rows[index];
+                        return ColoredBox(
+                          color:
+                              index.isEven
+                                  ? Colors.white.withValues(alpha: .5)
+                                  : Colors.transparent,
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 34,
+                                child: Text(
+                                  '${firstNumber + row}.',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: muted,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
-                            ),
-                            cell(row * 2 - offset),
-                            cell(row * 2 + 1 - offset),
-                          ],
-                        ),
+                              cell(row * 2 - offset),
+                              cell(row * 2 + 1 - offset),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
         ),
       ],

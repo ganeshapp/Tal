@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../core/chess.dart';
@@ -39,13 +41,15 @@ class ChessBoard extends StatefulWidget {
 
 class _ChessBoardState extends State<ChessBoard> {
   String _fen = '', _legalKey = '';
-  String? selected, _downSquare, _priorSelection, _dragFrom;
+  String? selected, _downSquare, _priorSelection, _dragFrom, _droppedMove;
+  int? _activePointer, _droppedId;
+  Offset _downPosition = Offset.zero, _grabOffset = Offset.zero;
   List<String> _legal = [];
   Map<String, String> _pieces = {};
   final Map<String, int> _ids = {};
   int _nextId = 0;
   String? _checkedKing;
-  bool _dragging = false, _drop = false, _promoting = false;
+  bool _dragging = false, _promoting = false;
   double _size = 0;
   final ValueNotifier<Offset?> _pointer = ValueNotifier(null);
   bool get _canPremove =>
@@ -65,6 +69,19 @@ class _ChessBoardState extends State<ChessBoard> {
     final fen = widget.position.fen;
     if (fen != _fen) {
       final next = widget.position.pieces;
+      // A bot reply changes the legal destinations, not the user's intention.
+      // Preserve a selected/held piece only across the opponent's turn, and
+      // only if that same piece survived. Browsing, takebacks and resets clear it.
+      final retainSelection =
+          _fen.isNotEmpty &&
+          widget.premoveWhite != null &&
+          (_fen.split(' ')[1] == 'w') != widget.premoveWhite &&
+          widget.position.whiteTurn == widget.premoveWhite &&
+          widget.lastMove != null &&
+          _isForwardReply(fen) &&
+          selected != null &&
+          _pieces[selected] == next[selected] &&
+          _own(selected);
       final oldIds = Map<String, int>.from(_ids);
       final remaining = Map<String, String>.from(_pieces);
       _ids.clear();
@@ -73,7 +90,10 @@ class _ChessBoardState extends State<ChessBoard> {
       if (last != null && last.length >= 4) {
         final from = last.substring(0, 2), to = last.substring(2, 4);
         if (oldIds[from] != null &&
-            next[to] != null &&
+            (remaining[from] == next[to] ||
+                last.length == 5 &&
+                    remaining[from]?.toLowerCase() == 'p' &&
+                    next[to]?.toLowerCase() == last[4]) &&
             remaining[from] != next[from]) {
           _ids[to] = oldIds[from]!;
           remaining.remove(from);
@@ -99,11 +119,22 @@ class _ChessBoardState extends State<ChessBoard> {
         }
       }
       _pieces = next;
+      _droppedId =
+          _droppedMove != null && widget.lastMove == _droppedMove
+              ? _ids[_droppedMove!.substring(2, 4)]
+              : null;
+      // Some consumers don't supply lastMove. Match a completed drag by its
+      // actual source/destination change as well.
+      if (_droppedMove != null && _droppedId == null) {
+        final from = _droppedMove!.substring(0, 2);
+        final to = _droppedMove!.substring(2, 4);
+        if (next[from] == null && _ids[to] == oldIds[from]) {
+          _droppedId = _ids[to];
+        }
+      }
+      _droppedMove = null;
       _fen = fen;
-      selected = null;
-      _dragging = false;
-      _dragFrom = null;
-      _pointer.value = null;
+      if (!retainSelection) _clearInteraction();
       _checkedKing =
           widget.position.inCheck
               ? _pieces.entries
@@ -124,6 +155,33 @@ class _ChessBoardState extends State<ChessBoard> {
               ? widget.position.premoves
               : widget.position.legal;
     }
+    if (!_enabled && (selected != null || _activePointer != null)) {
+      _clearInteraction();
+    }
+  }
+
+  bool _isForwardReply(String fen) {
+    final previous = ChessPosition(
+      fen: _fen,
+      chess960: widget.position.chess960,
+    );
+    return previous.play(widget.lastMove!) && previous.fen == fen;
+  }
+
+  void _clearInteraction() {
+    selected = null;
+    _dragging = false;
+    _dragFrom = null;
+    _downSquare = null;
+    _priorSelection = null;
+    _activePointer = null;
+    _pointer.value = null;
+  }
+
+  @override
+  void didUpdateWidget(covariant ChessBoard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.flipped != widget.flipped) _clearInteraction();
   }
 
   Offset _offset(String sq) {
@@ -147,10 +205,27 @@ class _ChessBoardState extends State<ChessBoard> {
             (widget.premoveWhite ?? widget.position.whiteTurn);
   }
 
-  void _down(DragDownDetails d) {
-    _downSquare = _square(d.localPosition);
+  void _down(PointerDownEvent d) {
+    if (d.buttons == kSecondaryMouseButton) {
+      setState(_clearInteraction);
+      widget.onCancelPremove?.call();
+      return;
+    }
+    if (!_enabled ||
+        _promoting ||
+        _activePointer != null ||
+        d.buttons != kPrimaryButton) {
+      return;
+    }
+    _activePointer = d.pointer;
+    _downPosition = d.localPosition;
+    _downSquare = _square(_downPosition);
     _priorSelection = selected;
     if (_own(_downSquare)) {
+      _grabOffset =
+          _downPosition -
+          _offset(_downSquare!) -
+          Offset(_size / 16, _size / 16);
       setState(() {
         selected = _downSquare;
         _dragFrom = _downSquare;
@@ -159,7 +234,7 @@ class _ChessBoardState extends State<ChessBoard> {
     }
   }
 
-  void _tap(TapUpDetails d) {
+  void _tap(PointerUpEvent d) {
     final to = _square(d.localPosition);
     if (_priorSelection != null &&
         to != null &&
@@ -169,25 +244,37 @@ class _ChessBoardState extends State<ChessBoard> {
       setState(() => selected = _own(to) && to != _priorSelection ? to : null);
       if (selected == null) widget.onCancelPremove?.call();
     }
-    _dragFrom = null;
-    _pointer.value = null;
   }
 
-  void _end(DragEndDetails _) {
-    final to = _pointer.value == null ? null : _square(_pointer.value!);
+  void _movePointer(PointerMoveEvent d) {
+    if (d.pointer != _activePointer || _dragFrom == null) return;
+    _pointer.value = d.localPosition;
+    if (!_dragging && (d.localPosition - _downPosition).distanceSquared >= 9) {
+      setState(() => _dragging = true);
+    }
+  }
+
+  void _end(PointerUpEvent d) {
+    if (d.pointer != _activePointer) return;
+    final to = _square(d.localPosition);
     final from = _dragFrom;
+    final dragged = _dragging;
+    _activePointer = null;
+    if (dragged) {
+      if (from != null && to != null && from != to) {
+        _attempt(from, to, dragged: true);
+      }
+    } else {
+      _tap(d);
+    }
     setState(() {
       _dragging = false;
       _dragFrom = null;
     });
     _pointer.value = null;
-    if (from != null && to != null && from != to) {
-      _drop = true;
-      _attempt(from, to);
-    }
   }
 
-  Future<void> _attempt(String from, String to) async {
+  Future<void> _attempt(String from, String to, {bool dragged = false}) async {
     if (_promoting) return;
     final options = _legal.where((m) => m.startsWith(from + to)).toList();
     if (options.isEmpty) {
@@ -231,6 +318,7 @@ class _ChessBoardState extends State<ChessBoard> {
     if (_canPremove) {
       widget.onPremove?.call(move);
     } else {
+      if (dragged) _droppedMove = move;
       widget.onMove?.call(move);
     }
   }
@@ -238,8 +326,6 @@ class _ChessBoardState extends State<ChessBoard> {
   @override
   Widget build(BuildContext context) {
     _sync();
-    final duration = _drop ? Duration.zero : const Duration(milliseconds: 140);
-    _drop = false;
     return AspectRatio(
       aspectRatio: 1,
       child: LayoutBuilder(
@@ -255,131 +341,168 @@ class _ChessBoardState extends State<ChessBoard> {
                       .toSet();
           return RepaintBoundary(
             child: MouseRegion(
-              cursor: _enabled ? SystemMouseCursors.grab : MouseCursor.defer,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onPanDown: _enabled ? _down : null,
-                onTapUp: _enabled ? _tap : null,
-                onPanStart:
+              cursor:
+                  !_enabled
+                      ? MouseCursor.defer
+                      : _dragging
+                      ? SystemMouseCursors.grabbing
+                      : SystemMouseCursors.grab,
+              // Claim a board gesture immediately so a surrounding scroll view
+              // cannot steal a held piece. Raw pointer movement avoids Flutter's
+              // large touch-pan threshold and updates only the dragged overlay.
+              child: RawGestureDetector(
+                gestures:
                     _enabled
-                        ? (d) {
-                          if (_dragFrom != null) {
-                            _pointer.value = d.localPosition;
-                            setState(() => _dragging = true);
-                          }
+                        ? {
+                          EagerGestureRecognizer:
+                              GestureRecognizerFactoryWithHandlers<
+                                EagerGestureRecognizer
+                              >(EagerGestureRecognizer.new, (_) {}),
                         }
-                        : null,
-                onPanUpdate:
-                    _enabled
-                        ? (d) {
-                          if (_dragging) _pointer.value = d.localPosition;
-                        }
-                        : null,
-                onPanEnd: _enabled ? _end : null,
-                onPanCancel: () {
-                  if (mounted && _dragging) setState(() => _dragging = false);
-                },
-                onSecondaryTap: widget.onCancelPremove,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _SquaresPainter(
-                          flipped: widget.flipped,
-                          last: widget.lastMove,
-                          selected: selected,
-                          hint: widget.hint,
-                          premove: widget.premove,
-                          checked: _checkedKing,
-                          targets: targets,
-                          occupied: _pieces.keys.toSet(),
-                          coordinates: widget.coordinates,
+                        : const {},
+                child: Listener(
+                  behavior: HitTestBehavior.opaque,
+                  onPointerDown: _down,
+                  onPointerMove: _movePointer,
+                  onPointerUp: _end,
+                  onPointerCancel: (d) {
+                    if (d.pointer == _activePointer) {
+                      setState(_clearInteraction);
+                    }
+                  },
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned.fill(
+                        child: RepaintBoundary(
+                          key: const ValueKey('stationary-board'),
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: CustomPaint(
+                                  painter: _SquaresPainter(
+                                    flipped: widget.flipped,
+                                    last: widget.lastMove,
+                                    selected: selected,
+                                    hint: widget.hint,
+                                    premove: widget.premove,
+                                    checked: _checkedKing,
+                                    targets: targets,
+                                    occupied: _pieces.keys.toSet(),
+                                    coordinates: widget.coordinates,
+                                  ),
+                                ),
+                              ),
+                              for (final entry in _pieces.entries)
+                                AnimatedPositioned(
+                                  key: ValueKey('piece-${_ids[entry.key]}'),
+                                  duration:
+                                      _ids[entry.key] == _droppedId
+                                          ? Duration.zero
+                                          : const Duration(milliseconds: 160),
+                                  curve: Curves.easeOutCubic,
+                                  left: _offset(entry.key).dx,
+                                  top: _offset(entry.key).dy,
+                                  width: side,
+                                  height: side,
+                                  child: IgnorePointer(
+                                    key: ValueKey('board-piece-${entry.key}'),
+                                    child: Opacity(
+                                      opacity:
+                                          _dragging && _dragFrom == entry.key
+                                              ? .18
+                                              : 1,
+                                      child: Center(
+                                        child: Piece(
+                                          piece: entry.value,
+                                          size: side * .91,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              // A small accessible target for each square; hit testing still happens once at board level.
+                              for (var rank = 1; rank <= 8; rank++)
+                                for (var file = 0; file < 8; file++)
+                                  Positioned(
+                                    left:
+                                        _offset(
+                                          '${String.fromCharCode(97 + file)}$rank',
+                                        ).dx,
+                                    top:
+                                        _offset(
+                                          '${String.fromCharCode(97 + file)}$rank',
+                                        ).dy,
+                                    width: side,
+                                    height: side,
+                                    child: Semantics(
+                                      selected:
+                                          selected ==
+                                          '${String.fromCharCode(97 + file)}$rank',
+                                      label:
+                                          '${String.fromCharCode(97 + file)}$rank ${_pieces['${String.fromCharCode(97 + file)}$rank'] ?? 'empty'}',
+                                      button: _enabled,
+                                      onTap:
+                                          !_enabled
+                                              ? null
+                                              : () {
+                                                final sq =
+                                                    '${String.fromCharCode(97 + file)}$rank';
+                                                if (selected != null &&
+                                                    !_own(sq)) {
+                                                  _attempt(selected!, sq);
+                                                } else {
+                                                  setState(() => selected = sq);
+                                                }
+                                              },
+                                      child: const SizedBox.expand(),
+                                    ),
+                                  ),
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: CustomPaint(
+                                    painter: _ArrowsPainter(
+                                      widget.arrows,
+                                      widget.flipped,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    for (final entry in _pieces.entries)
-                      AnimatedPositioned(
-                        key: ValueKey('piece-${_ids[entry.key]}'),
-                        duration: duration,
-                        curve: Curves.easeOutCubic,
-                        left: _offset(entry.key).dx,
-                        top: _offset(entry.key).dy,
-                        width: side,
-                        height: side,
-                        child: IgnorePointer(
-                          child: Opacity(
-                            opacity:
-                                _dragging && _dragFrom == entry.key ? 0 : 1,
-                            child: Center(
-                              child: Piece(
-                                piece: entry.value,
-                                size: side * .91,
+                      if (_dragging && _dragFrom != null)
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          width: side,
+                          height: side,
+                          child: ValueListenableBuilder<Offset?>(
+                            valueListenable: _pointer,
+                            builder:
+                                (_, p, child) => Transform.translate(
+                                  offset:
+                                      (p ?? _downPosition) -
+                                      _grabOffset -
+                                      Offset(side / 2, side / 2),
+                                  child: IgnorePointer(
+                                    key: const ValueKey('dragged-piece'),
+                                    child: child,
+                                  ),
+                                ),
+                            child: RepaintBoundary(
+                              child: Center(
+                                child: Piece(
+                                  piece: _pieces[_dragFrom]!,
+                                  size: side * .91,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    // A small accessible target for each square; hit testing still happens once at board level.
-                    for (var rank = 1; rank <= 8; rank++)
-                      for (var file = 0; file < 8; file++)
-                        Positioned(
-                          left:
-                              _offset(
-                                '${String.fromCharCode(97 + file)}$rank',
-                              ).dx,
-                          top:
-                              _offset(
-                                '${String.fromCharCode(97 + file)}$rank',
-                              ).dy,
-                          width: side,
-                          height: side,
-                          child: Semantics(
-                            label:
-                                '${String.fromCharCode(97 + file)}$rank ${_pieces['${String.fromCharCode(97 + file)}$rank'] ?? 'empty'}',
-                            button: _enabled,
-                            onTap:
-                                !_enabled
-                                    ? null
-                                    : () {
-                                      final sq =
-                                          '${String.fromCharCode(97 + file)}$rank';
-                                      if (selected != null && !_own(sq)) {
-                                        _attempt(selected!, sq);
-                                      } else {
-                                        setState(() => selected = sq);
-                                      }
-                                    },
-                            child: const SizedBox.expand(),
-                          ),
-                        ),
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: CustomPaint(
-                          painter: _ArrowsPainter(
-                            widget.arrows,
-                            widget.flipped,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (_dragging && _dragFrom != null)
-                      ValueListenableBuilder<Offset?>(
-                        valueListenable: _pointer,
-                        builder:
-                            (_, p, child) =>
-                                p == null
-                                    ? const SizedBox()
-                                    : Positioned(
-                                      left: p.dx - side / 2,
-                                      top: p.dy - side / 2,
-                                      width: side,
-                                      height: side,
-                                      child: IgnorePointer(child: child),
-                                    ),
-                        child: Piece(piece: _pieces[_dragFrom]!, size: side),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -472,7 +595,16 @@ class _SquaresPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _SquaresPainter old) => true;
+  bool shouldRepaint(covariant _SquaresPainter old) =>
+      old.flipped != flipped ||
+      old.coordinates != coordinates ||
+      old.last != last ||
+      old.selected != selected ||
+      old.hint != hint ||
+      old.premove != premove ||
+      old.checked != checked ||
+      !setEquals(old.targets, targets) ||
+      !setEquals(old.occupied, occupied);
 }
 
 class _ArrowsPainter extends CustomPainter {

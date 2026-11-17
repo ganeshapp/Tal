@@ -28,8 +28,8 @@ The design principle is to **develop creativity**: encourage exploration and jus
 
 - **Maia 3 23M**, one skill-conditioned transformer, selectable from 600 through 2600 in steps of 100. Both Elo inputs receive the selected rating, as in the official UCI interface. Legal moves are sampled from the model policy at temperature 1. These are model conditioning levels, not independently measured account ratings.
 - **Stockfish 18** analyzes positions using three principal variations, two threads and a 64 MB hash. Standard games use Maia; Chess960 uses explicitly labelled Stockfish limited-strength play. No weak practice engine is presented as Maia.
-- Tap and drag, piece animation, premoves, promotion selection, takebacks, board rotation, game history, PGN copying, persistent sessions, and clear terminal results. Checkmate always has an exact result and full evaluation bar.
-- Review opens immediately. The board and current move feedback remain visible while browsing moves. Navigate with the move table, graph, keyboard arrows, autoplay or key-move buttons. Inspect both players' move categories, click engine variations, show best/alternative/threat arrows, and explore branches without modifying the played game.
+- Tap and drag with a stable grab point, selection and held pieces that survive a bot reply, piece animation, premoves, promotion selection, takebacks, board rotation, game history, PGN copying, persistent sessions, and clear terminal results. Checkmate always has an exact result and full evaluation bar.
+- Review opens immediately. The board and current move feedback remain visible while browsing moves. The phone layout reserves space for multiple move rows, puts the graph in Summary, and offers a smaller-board toggle for more moves. Navigate with the scrollable move table, graph, keyboard arrows, autoplay or key-move buttons. Category filters show matching rows, with the opponent’s reply retained for context. Inspect both players' move categories, click engine variations, show best/alternative/threat arrows, and explore branches without modifying the played game.
 - Games can be filtered by your color, result, bot rating and opening family. Position-based opening detection recognizes transpositions.
 - 22 suggested lines plus a searchable catalogue of 3,865 named openings, with either color: rehearse or start a game from the opening. Six endgame/conversion drills. A local spaced-repetition queue for analyzed blunders.
 
@@ -53,10 +53,11 @@ flutter pub get
 flutter analyze
 flutter test
 flutter test integration_test/engine_test.dart -d <android-device>
+flutter test integration_test/board_test.dart -d <android-device>
 flutter build apk --release --target-platform android-arm64 --split-per-abi
 ```
 
-Run `tool/fetch_build_assets.py` once after cloning. It verifies and restores the exact model, Stockfish networks and native ONNX libraries from the matching GitHub release; these large files are kept out of Git history. The installers already contain them. To build without network access, download the build-assets archive separately and pass it with `--archive /path/to/Tal-0.3.0-build-assets.tar.gz`.
+Run `tool/fetch_build_assets.py` once after cloning. It verifies and restores the exact model, Stockfish networks and native ONNX libraries from the pinned GitHub release (the unchanged build assets are reused from 0.3.0); these large files are kept out of Git history. The installers already contain them. To build without network access, download the build-assets archive separately and pass it with `--archive /path/to/Tal-0.3.0-build-assets.tar.gz`.
 
 The macOS package needs Apple command-line tools, the Flutter macOS engine artifacts, CMake and Ninja. The build script assembles the Flutter release and a minimal native host without requiring the Xcode IDE. Set `FLUTTER_BIN`, `CMAKE_BIN` and `NINJA_BIN` if they are not on PATH:
 
@@ -65,7 +66,7 @@ tool/build_macos.sh
 python3 tool/package_dmg.py
 ```
 
-These create `build/distribution/Tal.app` and `build/Tal-0.3.0-arm64.dmg` for **Apple Silicon, macOS 12+**. The local test package is ad-hoc signed, not notarized. Android uses a development signing key for personal testing.
+These create `build/distribution/Tal.app` and `build/Tal-0.3.1-arm64.dmg` for **Apple Silicon, macOS 12+**. The local test package is ad-hoc signed, not notarized. Android uses a development signing key for personal testing.
 
 On macOS, actual model parity and native engine tests can be enabled with:
 
@@ -75,7 +76,7 @@ TAL_ENGINE_DIR="$PWD/build/mac_engines" flutter test
 flutter test tool/review_screenshots_test.dart
 ```
 
-Tests cover chess rules, all Chess960 starts, every bundled puzzle solution, legal opening lines, the reported Qxb7# regression, score perspective, move/drag/premove interactions, takeback cancellation, review navigation/branches, responsive layouts, Glickman's published rating example, puzzle selection and assistance, timers, persistence and native engines. The Android integration test exercises Maia at eight conditioning levels and Stockfish MultiPV/mate/concurrent operation. See `docs/build-report.json` for the final artifact checks.
+Tests cover chess rules, all Chess960 starts, every bundled puzzle solution, legal opening lines, the reported Qxb7# regression, score perspective, move/drag/premove interactions, takeback cancellation, review navigation/branches, responsive layouts, Glickman's published rating example, puzzle selection and assistance, timers, persistence and native engines. The Android integration test exercises Maia at eight conditioning levels and Stockfish MultiPV/mate/concurrent operation. See [the 0.3.1 build report](docs/build-report-0.3.1.json) for the final artifact checks.
 
 ## Model provenance and conversion
 
@@ -87,7 +88,11 @@ To reproduce the export, obtain the pinned checkpoint as `build/maia3-23m.pt`, i
 
 Scores are stored from White's perspective. The mover's loss uses `100 / (1 + exp(-0.00368208 * cp))`, with exact 0/100 at terminal mate and 50 at a draw. Thresholds: inaccuracy 5–<10 percentage points, mistake 10–20, blunder >20. A miss is a >20-point loss from at least 80% to below 60%. Playing the pre-move engine best move is not penalized for later search drift.
 
-Great and brilliant labels are conservative heuristics, not a replication of commercial platform labels. Great requires the best move and a ≥20-point gap to a second line at the same depth. Brilliant requires a material sacrifice with a predicted reply, at least two pawns of gross and net material loss, less than two points lost and a viable resulting position. Checkmate takes precedence over all labels.
+Moves in the bundled opening catalogue are labelled **Book**, including transpositions and unnamed intermediate positions. This identifies known theory; it does not declare every gambit objectively equal. The actual engine score remains visible. The deterministic index contains 8,192 moves from 5,579 positions and can be rebuilt after changing the catalogue with `dart run tool/build_opening_book.dart`.
+
+Great and brilliant labels are conservative heuristics, not a replication of commercial platform labels. Great requires the engine best move, depth 16 or greater, and a ≥20-point gap to a second line at the same depth. Brilliant requires a supported minor/major-piece offer, depth 16 or greater before and after, less than one point lost, and a viable position which was not already overwhelmingly winning. The predicted best reply must capture the offered piece and yield at least two pawns of net material after all legal recaptures on that square and the material won by the original move. Routine castling, pawn moves, equal exchanges, unrelated captures and shallow searches cannot receive it. This deliberately misses some creative sacrifices, including declined offers and sacrifices of a different piece. Checkmate takes precedence over all labels.
+
+Version 0.3.1 invalidates cached reviews and their derived mistake queue so old incorrect labels are not reused. Games, settings and puzzle progress are retained; reviews are recomputed when opened. See [interaction and review changes](docs/interaction-review-0.3.1.md) for the rationale and regression coverage.
 
 Analysis targets depth 16 with a 2.5-second position budget; achieved depth is shown. Live evaluations use shorter searches. The hypothetical threat overlay analyzes what the opponent could do after a pass; it is unavailable in check. Analysis branches are session-local. Endgame drills are playable positions, not tablebase-graded lessons. The browser supports the interface and puzzles, but native bot play and analysis require the desktop/mobile app. iOS has not been built or validated.
 

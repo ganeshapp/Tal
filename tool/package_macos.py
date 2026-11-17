@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Package the ARM64 Flutter release with Apple command-line tools (no Xcode UI required)."""
 from pathlib import Path
-import subprocess, shutil, plistlib, json
+import subprocess, shutil, plistlib, json, re
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'build/macos_manual';APP=ROOT/'build/distribution/Tal.app'
 def run(*args): subprocess.run([str(a) for a in args],check=True,cwd=ROOT)
@@ -19,7 +19,8 @@ for name in ['Stockfish-GPL.txt','Maia3-AGPL.txt']:
     if source.exists():shutil.copy2(source,APP/'Contents/Resources'/name)
 shutil.copy2(ROOT/'LICENSE',APP/'Contents/Resources/Tal-AGPL.txt')
 shutil.copy2(ROOT/'THIRD_PARTY.md',APP/'Contents/Resources/THIRD_PARTY.md')
-info={'CFBundleExecutable':'Tal','CFBundleIdentifier':'io.github.ganeshapp.tal','CFBundleName':'Tal','CFBundleDisplayName':'Tal','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.3.0','CFBundleVersion':'3','LSMinimumSystemVersion':'12.0','NSHighResolutionCapable':True,'NSSupportsAutomaticGraphicsSwitching':True,'CFBundleIconFile':'AppIcon'}
+version, build = re.search(r'^version: ([^+\s]+)\+(\d+)', (ROOT/'pubspec.yaml').read_text(), re.M).groups()
+info={'CFBundleExecutable':'Tal','CFBundleIdentifier':'io.github.ganeshapp.tal','CFBundleName':'Tal','CFBundleDisplayName':'Tal','CFBundlePackageType':'APPL','CFBundleShortVersionString':version,'CFBundleVersion':build,'LSMinimumSystemVersion':'12.0','NSHighResolutionCapable':True,'NSSupportsAutomaticGraphicsSwitching':True,'CFBundleIconFile':'AppIcon'}
 (APP/'Contents/Info.plist').write_bytes(plistlib.dumps(info))
 # Resolve only the dependencies pinned in this project's package configuration.
 packages=json.loads((ROOT/'.dart_tool/package_config.json').read_text())['packages']

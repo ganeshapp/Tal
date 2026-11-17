@@ -20,3 +20,5 @@ payload=json.dumps(rows,separators=(',',':')).encode()
 (ROOT/'assets/data/openings.json').write_bytes(payload)
 (ROOT/'assets/data/openings_manifest.json').write_text(json.dumps({'source':'https://github.com/lichess-org/chess-openings','revision':revision,'license':'CC0-1.0','records':len(rows),'bytes':len(payload),'sha256':hashlib.sha256(payload).hexdigest()},indent=2)+'\n')
 print(len(rows),len(payload),revision)
+
+print('Rebuild the book-move index: dart run tool/build_opening_book.dart')
